@@ -36,10 +36,13 @@ module Terraforming
             "tags.#" => "0",
           }
 
-          attributes["port"] =
-            cache_cluster.configuration_endpoint.port.to_s if cache_cluster.configuration_endpoint
+          attributes["port"] = if cache_cluster.configuration_endpoint
+                                 cache_cluster.configuration_endpoint.port.to_s
+                               else
+                                 cache_cluster.cache_nodes[0].endpoint.port.to_s
+                               end
 
-          resources["aws_elasticache_cluster.#{cache_cluster.cache_cluster_id}"] = {
+          resources["aws_elasticache_cluster.#{module_name_of(cache_cluster)}"] = {
             "type" => "aws_elasticache_cluster",
             "primary" => {
               "id" => cache_cluster.cache_cluster_id,
@@ -54,11 +57,11 @@ module Terraforming
       private
 
       def cache_clusters
-        @client.describe_cache_clusters(show_cache_node_info: true).cache_clusters
+        @client.describe_cache_clusters(show_cache_node_info: true).map(&:cache_clusters).flatten
       end
 
       def cluster_in_vpc?(cache_cluster)
-        cache_cluster.cache_security_groups.length == 0
+        cache_cluster.cache_security_groups.empty?
       end
 
       def security_group_ids_of(cache_cluster)
@@ -67,6 +70,10 @@ module Terraforming
 
       def security_group_names_of(cache_cluster)
         cache_cluster.cache_security_groups.map { |sg| sg.cache_security_group_name }
+      end
+
+      def module_name_of(cache_cluster)
+        normalize_module_name(cache_cluster.cache_cluster_id)
       end
     end
   end

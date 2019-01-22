@@ -27,7 +27,7 @@ module Terraforming
             "name" => policy.policy_name,
             "policy" => prettify_policy(policy.policy_document, breakline: true, unescape: true)
           }
-          resources["aws_iam_group_policy.#{policy.policy_name}"] = {
+          resources["aws_iam_group_policy.#{unique_name(policy)}"] = {
             "type" => "aws_iam_group_policy",
             "primary" => {
               "id" => iam_group_policy_id_of(policy),
@@ -41,12 +41,16 @@ module Terraforming
 
       private
 
-      def iam_groups
-        @client.list_groups.groups
+      def unique_name(policy)
+        "#{normalize_module_name(policy.group_name)}_#{normalize_module_name(policy.policy_name)}"
       end
 
       def iam_group_policy_id_of(policy)
         "#{policy.group_name}:#{policy.policy_name}"
+      end
+
+      def iam_groups
+        @client.list_groups.map(&:groups).flatten
       end
 
       def iam_group_policy_names_in(group)

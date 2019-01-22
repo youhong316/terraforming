@@ -26,15 +26,40 @@ module Terraforming
         end
       end
 
+      Aws.config[:sts] = {
+        stub_responses: {
+          get_caller_identity: {
+            account: '123456789012',
+            arn: 'arn:aws:iam::123456789012:user/terraforming',
+            user_id: 'AAAABBBBCCCCDDDDDEEE'
+          }
+        }
+      }
+
       before do
         allow(STDOUT).to receive(:puts).and_return(nil)
         allow(klass).to receive(:tf).and_return("")
         allow(klass).to receive(:tfstate).and_return({})
+        allow(klass).to receive(:assume).and_return({})
+      end
+
+      describe "asg" do
+        let(:klass)   { Terraforming::Resource::ALB }
+        let(:command) { :alb }
+
+        it_behaves_like "CLI examples"
       end
 
       describe "asg" do
         let(:klass)   { Terraforming::Resource::AutoScalingGroup }
         let(:command) { :asg }
+
+        it_behaves_like "CLI examples"
+      end
+
+      describe "cwa" do
+        let(:klass)   { Terraforming::Resource::CloudWatchAlarm }
+        let(:command) { :cwa }
 
         it_behaves_like "CLI examples"
       end
@@ -88,6 +113,13 @@ module Terraforming
         it_behaves_like "CLI examples"
       end
 
+      describe "efs" do
+        let(:klass)   { Terraforming::Resource::EFSFileSystem }
+        let(:command) { :efs }
+
+        it_behaves_like "CLI examples"
+      end
+
       describe "elb" do
         let(:klass)   { Terraforming::Resource::ELB }
         let(:command) { :elb }
@@ -130,6 +162,13 @@ module Terraforming
         it_behaves_like "CLI examples"
       end
 
+      describe "iampa" do
+        let(:klass)   { Terraforming::Resource::IAMPolicyAttachment }
+        let(:command) { :iampa }
+
+        it_behaves_like "CLI examples"
+      end
+
       describe "iamr" do
         let(:klass)   { Terraforming::Resource::IAMRole }
         let(:command) { :iamr }
@@ -158,6 +197,27 @@ module Terraforming
         it_behaves_like "CLI examples"
       end
 
+      describe "kmsa" do
+        let(:klass)   { Terraforming::Resource::KMSAlias }
+        let(:command) { :kmsa }
+
+        it_behaves_like "CLI examples"
+      end
+
+      describe "kmsk" do
+        let(:klass)   { Terraforming::Resource::KMSKey }
+        let(:command) { :kmsk }
+
+        it_behaves_like "CLI examples"
+      end
+
+      describe "lc" do
+        let(:klass)   { Terraforming::Resource::LaunchConfiguration }
+        let(:command) { :lc }
+
+        it_behaves_like "CLI examples"
+      end
+
       describe "igw" do
         let(:klass)   { Terraforming::Resource::InternetGateway }
         let(:command) { :igw }
@@ -168,6 +228,13 @@ module Terraforming
       describe "nacl" do
         let(:klass)   { Terraforming::Resource::NetworkACL }
         let(:command) { :nacl }
+
+        it_behaves_like "CLI examples"
+      end
+
+      describe "nat" do
+        let(:klass)   { Terraforming::Resource::NATGateway }
+        let(:command) { :nat }
 
         it_behaves_like "CLI examples"
       end
@@ -235,6 +302,13 @@ module Terraforming
         it_behaves_like "CLI examples"
       end
 
+      describe "sqs" do
+        let(:klass)   { Terraforming::Resource::SQS }
+        let(:command) { :sqs }
+
+        it_behaves_like "CLI examples"
+      end
+
       describe "sn" do
         let(:klass)   { Terraforming::Resource::Subnet }
         let(:command) { :sn }
@@ -245,6 +319,27 @@ module Terraforming
       describe "vpc" do
         let(:klass)   { Terraforming::Resource::VPC }
         let(:command) { :vpc }
+
+        it_behaves_like "CLI examples"
+      end
+
+      describe "vgw" do
+        let(:klass)   { Terraforming::Resource::VPNGateway }
+        let(:command) { :vgw }
+
+        it_behaves_like "CLI examples"
+      end
+
+      describe "snst" do
+        let(:klass)   { Terraforming::Resource::SNSTopic }
+        let(:command) { :snst }
+
+        it_behaves_like "CLI examples"
+      end
+
+      describe "snss" do
+        let(:klass)   { Terraforming::Resource::SNSTopicSubscription }
+        let(:command) { :snss }
 
         it_behaves_like "CLI examples"
       end
@@ -426,7 +521,7 @@ resource "aws_s3_bucket" "fuga" {
         end
 
         context "with --tfstate --merge TFSTATE --overwrite" do
-           before do
+          before do
             @tmp_tfstate = Tempfile.new("tfstate")
             @tmp_tfstate.write(open(tfstate_fixture_path).read)
             @tmp_tfstate.flush
@@ -440,6 +535,39 @@ resource "aws_s3_bucket" "fuga" {
           after do
             @tmp_tfstate.close
             @tmp_tfstate.unlink
+          end
+        end
+
+        context "with --assumes and without --tfstate" do
+          it "should switch roles and export tf" do
+            expect(klass).to receive(:tf).with(no_args)
+            described_class.new.invoke(command, [], {
+              assume: 'arn:aws:iam::123456789123:role/test-role',
+              region: 'ap-northeast-1'
+            })
+          end
+        end
+
+        context "with --assumes and --tfstate" do
+          it "should switch roles and export tfstate" do
+            expect(klass).to receive(:tfstate).with(no_args)
+            described_class.new.invoke(command, [], {
+              assume: 'arn:aws:iam::123456789123:role/test-role',
+              region: 'ap-northeast-1',
+              tfstate: true
+            })
+          end
+        end
+
+        context "with --assumes and --tfstate --merge TFSTATE" do
+          it "should switch roles and export merged tfstate" do
+            expect(klass).to receive(:tfstate).with(no_args)
+            described_class.new.invoke(command, [], {
+              assume: 'arn:aws:iam::123456789123:role/test-role',
+              region: 'ap-northeast-1',
+              tfstate: true,
+              merge: tfstate_fixture_path
+            })
           end
         end
       end

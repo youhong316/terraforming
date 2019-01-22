@@ -57,11 +57,12 @@ resource "aws_iam_user" "fuga-piyo" {
               "primary" => {
                 "id" => "hoge",
                 "attributes" => {
-                  "arn"=> "arn:aws:iam::123456789012:user/hoge",
+                  "arn" => "arn:aws:iam::123456789012:user/hoge",
                   "id" => "hoge",
                   "name" => "hoge",
                   "path" => "/",
                   "unique_id" => "ABCDEFGHIJKLMN1234567",
+                  "force_destroy" => "false",
                 }
               }
             },
@@ -70,11 +71,12 @@ resource "aws_iam_user" "fuga-piyo" {
               "primary" => {
                 "id" => "fuga.piyo",
                 "attributes" => {
-                  "arn"=> "arn:aws:iam::345678901234:user/fuga",
+                  "arn" => "arn:aws:iam::345678901234:user/fuga",
                   "id" => "fuga.piyo",
                   "name" => "fuga.piyo",
                   "path" => "/system/",
                   "unique_id" => "OPQRSTUVWXYZA8901234",
+                  "force_destroy" => "false",
                 }
               }
             },

@@ -47,8 +47,8 @@ module Terraforming
       def routes_of(route_table)
         route_table.routes.reject do |route|
           route.gateway_id.to_s == 'local' ||
-          route.origin.to_s == 'EnableVgwRoutePropagation' ||
-          route.destination_prefix_list_id
+            route.origin.to_s == 'EnableVgwRoutePropagation' ||
+            route.destination_prefix_list_id
         end
       end
 
@@ -57,7 +57,7 @@ module Terraforming
       end
 
       def route_tables
-        @client.describe_route_tables.route_tables
+        @client.describe_route_tables.map(&:route_tables).flatten
       end
 
       def routes_attributes_of(route_table)
@@ -85,20 +85,12 @@ module Terraforming
       end
 
       def route_hashcode_of(route)
-        string = "#{route.destination_cidr_block}-" <<
-                 "#{route.gateway_id}-"
+        string = "#{route.destination_cidr_block}-#{route.gateway_id}-"
+        instance_set = !route.instance_id.nil? && route.instance_id != ''
 
-        instance_set = false
-        if route.instance_id != ''
-          string << route.instance_id.to_s
-          instance_set = true
-        end
-
+        string << route.instance_id.to_s if instance_set
         string << route.vpc_peering_connection_id.to_s
-
-        unless instance_set
-          string << route.network_interface_id.to_s
-        end
+        string << route.network_interface_id.to_s unless instance_set
 
         Zlib.crc32(string)
       end

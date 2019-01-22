@@ -1,4 +1,159 @@
-# [v0.7.0](https://github.com/dtan4/terraforming/releases/tag/v0.6.2) (2016-02-16)
+# [v0.16.0](https://github.com/dtan4/terraforming/releases/tag/v0.16.0) (2017-10-23)
+
+- Declare supported Terraform version: v0.9.3 or higher
+
+## New feature
+
+- Support assuming role `--assume` [#379](https://github.com/dtan4/terraforming/pull/379) (thanks @cmedley)
+
+## Fixed / Updated
+
+- Use ENCRYPT_DECRYPT as KMS key usage [#380](https://github.com/dtan4/terraforming/pull/380)
+- Fix IAM instance profile [#376](https://github.com/dtan4/terraforming/pull/376) (thanks @chroju)
+
+# [v0.15.0](https://github.com/dtan4/terraforming/releases/tag/v0.15.0) (2017-09-18)
+
+## Fixed / Updated
+
+- Upgrade to AWS SDK for Ruby V3 [#364](https://github.com/dtan4/terraforming/pull/364)
+- Ignore external key by `terraforming kmsk` (KMS key) [#363](https://github.com/dtan4/terraforming/pull/363)
+- Add failover attributes to Route53 record [#357](https://github.com/dtan4/terraforming/pull/357) (thanks @chroju)
+
+# [v0.14.0](https://github.com/dtan4/terraforming/releases/tag/v0.14.0) (2017-08-05)
+
+## Fixed / Updated
+
+- Drop Ruby 2.1 from CI [#351](https://github.com/dtan4/terraforming/pull/351)
+- Add `icmp_code` and `icmp_type` to NACL [#350](https://github.com/dtan4/terraforming/pull/350)
+- Use aws-sdk [#349](https://github.com/dtan4/terraforming/pull/349)
+- Rename title of aws_route53_record with wildcard [#348](https://github.com/dtan4/terraforming/pull/348) (thanks @furhouse)
+- SNS Support [#332](https://github.com/dtan4/terraforming/pull/332) (thanks @uberblah)
+  - `terraforming snst` (SNS Topic), `terraforming snss` (SNS Subscription)
+- Fix typo in cli.rb [#329](https://github.com/dtan4/terraforming/pull/329) (thanks @slalFe)
+
+# [v0.13.2](https://github.com/dtan4/terraforming/releases/tag/v0.13.2) (2017-04-20)
+
+## Fixed / Updated
+
+- Add prefix lists to security groups configuration [#326](https://github.com/dtan4/terraforming/pull/326) (thanks @julia-stripe)
+- Support Ruby 2.4 without warnings [#323](https://github.com/dtan4/terraforming/pull/323)
+- Fix support for EIP in EC2-Classic [#316](https://github.com/dtan4/terraforming/pull/316) (thanks @yn)
+
+# [v0.13.1](https://github.com/dtan4/terraforming/releases/tag/v0.13.1) (2017-01-23)
+
+## Fixed / Updated
+
+- Fixes for route53_records [#303](https://github.com/dtan4/terraforming/pull/303) (thanks @mioi)
+  - use `weighted_routing_policy`
+  - add various routing policy (latency, geolocation)
+  - uniquify resource name
+
+# [v0.13.0](https://github.com/dtan4/terraforming/releases/tag/v0.13.0) (2017-01-12)
+
+## Resource
+
+- AWS KMS Key Alias [#300](https://github.com/dtan4/terraforming/pull/300)
+- AWS KMS Key [#299](https://github.com/dtan4/terraforming/pull/299)
+
+## Fixed / Updated
+
+- Normalize all resource names in tf and tfstate files [#296](https://github.com/dtan4/terraforming/pull/296) (thanks @nabarunchatterjee)
+
+# [v0.12.0](https://github.com/dtan4/terraforming/releases/tag/v0.12.0) (2016-12-20)
+
+## Resource
+
+- AWS ALB [#291](https://github.com/dtan4/terraforming/pull/291)
+- AWS EFS File System [#283](https://github.com/dtan4/terraforming/pull/283) (thanks @notjames)
+
+## Fixed / Updated
+
+- Fix associate_public_ip_address attr for EC2 [#287](https://github.com/dtan4/terraforming/pull/287) (thanks @diwaniuk)
+
+# [v0.11.0](https://github.com/dtan4/terraforming/releases/tag/v0.11.0) (2016-11-14)
+
+## Resource
+
+- AWS CloudWatch alarm [#273](https://github.com/dtan4/terraforming/pull/273) (thanks @eredi93)
+
+## Fixed / Updated
+
+- Remove native extension gems and use wrapper gem [#275](https://github.com/dtan4/terraforming/pull/275)
+- Generate `iops` field only with io1 volume [#271](https://github.com/dtan4/terraforming/pull/271)
+- Set `force_destroy: false` for IAM users [#267](https://github.com/dtan4/terraforming/pull/267) (thanks @raylu)
+- Remove commands to delete empty files in export in README.md [#261](https://github.com/dtan4/terraforming/pull/261) (thanks @benmanns)
+
+# [v0.10.0](https://github.com/dtan4/terraforming/releases/tag/v0.10.0) (2016-08-24)
+
+## Resource
+
+- AWS NAT Gateway [#240](https://github.com/dtan4/terraforming/pull/240) (thanks @brianknight10)
+
+## Fixed / Updated
+
+- Use the latest Oj (2.17.x) [#257](https://github.com/dtan4/terraforming/pull/257)
+- Use the latest aws-sdk (2.5.x) [#256](https://github.com/dtan4/terraforming/pull/256)
+- Attach AWS-scoped IAM policy attachments [#251](https://github.com/dtan4/terraforming/pull/251) (thanks @raylu)
+- Fix LaunchConfiguration tf result when associate_public_ip_address [#250](https://github.com/dtan4/terraforming/pull/250) (thanks @gotyoooo)
+- Paginate IAM Group Membership [#248](https://github.com/dtan4/terraforming/pull/248) (thanks @raylu)
+- Add option to use AWS bundled CA certificate [#246](https://github.com/dtan4/terraforming/pull/246) (thanks @mattgartman)
+- Fix network_interface naming in EIP [#243](https://github.com/dtan4/terraforming/pull/243)
+- Fix name of "iampa" subcommand in CLI help output [#237](https://github.com/dtan4/terraforming/pull/237) (thanks @jimmycuadra)
+- Paginate all resources [#236](https://github.com/dtan4/terraforming/pull/236) (thanks @philsnow)
+
+__NOTE:__ OpsWorks support was omitted at v0.10.0 due to lack of tests. See [#264](https://github.com/dtan4/terraforming/pull/264) in detail.
+
+## Others
+
+- Introduce [RuboCop](https://github.com/bbatsov/rubocop) and [SideCI](https://sideci.com/) to check coding style automatically [#242](https://github.com/dtan4/terraforming/pull/242)
+
+# [v0.9.1](https://github.com/dtan4/terraforming/releases/tag/v0.9.1) (2016-06-17)
+
+## Fixed / Updated
+
+- Fix Ox load error #229 (thanks @winebarrel)
+
+# [v0.9.0](https://github.com/dtan4/terraforming/releases/tag/v0.9.0) (2016-06-12)
+
+## Resource
+
+- AWS IAM Policy Attachment #225
+
+## Fixed / Updated
+
+- Add `access_logs` attribute to ELB #223
+- Add `internal` attribute to ELB #221 (thanks @kbruner)
+
+# [v0.8.0](https://github.com/dtan4/terraforming/releases/tag/v0.8.0) (2016-05-29)
+
+## Notice
+
+- Drop Ruby 2.0 support. Now Terraforming supports Ruby 2.1 or higher. #206
+
+## Resource
+
+- AWS VPN Gateway #190 (thanks @tmccabe07)
+- AWS Launch Configuration #187 (thanks @phoolish)
+- AWS SQS #169 (thanks @manabusakai)
+
+## Fixed / Updated
+
+- Add prefix not to duplicate IAM inline policy name #212 (thanks @stormbeta)
+- Use the latest Ox and Oj #210
+- Simplify Security Group name #207 (thanks @woohgit)
+- Include description field for IAM policies #203 (thanks @stormbeta)
+- Support paging paging for IAM resources #201 (thanks @dominis)
+- Fix Security Group output around EC2-Classic #200 (thanks @woohgit)
+- Default Route53 record weight should be "-1" #197 (thanks @woohgit)
+- Add Elasticache Redis port #189 (thanks @phoolish)
+- Add `--region` option #188 (thanks @hajhatten)
+- Add zsh completion #176 (thanks @knakayama)
+- Add subnet ID to the resource name #185 (thanks @bandesz)
+- Add EC2 placement group #180 (thanks @wsh)
+- Wrap tag name in ELB #179 (thanks @robatwave)
+- Retrive full list of AutoScaling Groups #170 (thanks @shouyu)
+
+# [v0.7.0](https://github.com/dtan4/terraforming/releases/tag/v0.7.0) (2016-02-16)
 
 ## Resource
 

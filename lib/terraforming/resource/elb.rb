@@ -31,17 +31,22 @@ module Terraforming
             "id" => load_balancer.load_balancer_name,
             "idle_timeout" => load_balancer_attributes.connection_settings.idle_timeout.to_s,
             "instances.#" => load_balancer.instances.length.to_s,
+            "internal" => internal?(load_balancer).to_s,
             "name" => load_balancer.load_balancer_name,
             "source_security_group" => load_balancer.source_security_group.group_name,
           }
 
+          if load_balancer_attributes.access_log.enabled
+
+          end
+
+          attributes.merge!(access_logs_attributes_of(load_balancer_attributes))
           attributes.merge!(healthcheck_attributes_of(load_balancer))
           attributes.merge!(listeners_attributes_of(load_balancer))
           attributes.merge!(sg_attributes_of(load_balancer))
           attributes.merge!(subnets_attributes_of(load_balancer))
           attributes.merge!(instances_attributes_of(load_balancer))
           attributes.merge!(tags_attributes_of(load_balancer))
-
 
           resources["aws_elb.#{module_name_of(load_balancer)}"] = {
             "type" => "aws_elb",
@@ -52,6 +57,23 @@ module Terraforming
           }
 
           resources
+        end
+      end
+
+      def access_logs_attributes_of(load_balancer_attributes)
+        access_log = load_balancer_attributes.access_log
+
+        if access_log.enabled
+          {
+            "access_logs.#" => "1",
+            "access_logs.0.bucket" => access_log.s3_bucket_name,
+            "access_logs.0.bucket_prefix" => access_log.s3_bucket_prefix,
+            "access_logs.0.interval" => access_log.emit_interval.to_s,
+          }
+        else
+          {
+            "access_logs.#" => "0",
+          }
         end
       end
 
@@ -83,7 +105,7 @@ module Terraforming
 
       def tags_attributes_of(elb)
         tags = @client.describe_tags(load_balancer_names: [elb.load_balancer_name]).tag_descriptions.first.tags
-        attributes = {"tags.#" => tags.length.to_s}
+        attributes = { "tags.#" => tags.length.to_s }
 
         tags.each do |tag|
           attributes["tags.#{tag.key}"] = tag.value
@@ -93,7 +115,7 @@ module Terraforming
       end
 
       def instances_attributes_of(elb)
-        attributes = {"instances.#" => elb.instances.length.to_s}
+        attributes = { "instances.#" => elb.instances.length.to_s }
 
         elb.instances.each do |instance|
           attributes["instances.#{Zlib.crc32(instance.instance_id)}"] = instance.instance_id
@@ -103,7 +125,7 @@ module Terraforming
       end
 
       def subnets_attributes_of(elb)
-        attributes = {"subnets.#" => elb.subnets.length.to_s}
+        attributes = { "subnets.#" => elb.subnets.length.to_s }
 
         elb.subnets.each do |subnet_id|
           attributes["subnets.#{Zlib.crc32(subnet_id)}"] = subnet_id
@@ -113,7 +135,7 @@ module Terraforming
       end
 
       def sg_attributes_of(elb)
-        attributes = {"security_groups.#" => elb.security_groups.length.to_s}
+        attributes = { "security_groups.#" => elb.security_groups.length.to_s }
 
         elb.security_groups.each do |sg_id|
           attributes["security_groups.#{Zlib.crc32(sg_id)}"] = sg_id
@@ -123,7 +145,7 @@ module Terraforming
       end
 
       def listeners_attributes_of(elb)
-        attributes = {"listener.#" => elb.listener_descriptions.length.to_s}
+        attributes = { "listener.#" => elb.listener_descriptions.length.to_s }
 
         elb.listener_descriptions.each do |listener_description|
           attributes.merge!(listener_attributes_of(listener_description.listener))
@@ -158,7 +180,7 @@ module Terraforming
       end
 
       def load_balancers
-        @client.describe_load_balancers.load_balancer_descriptions
+        @client.describe_load_balancers.map(&:load_balancer_descriptions).flatten
       end
 
       def load_balancer_attributes_of(load_balancer)
@@ -171,6 +193,10 @@ module Terraforming
 
       def vpc_elb?(load_balancer)
         load_balancer.vpc_id != ""
+      end
+
+      def internal?(load_balancer)
+        load_balancer.scheme == "internal"
       end
     end
   end

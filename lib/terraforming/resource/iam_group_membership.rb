@@ -24,12 +24,12 @@ module Terraforming
           membership_name = membership_name_of(group)
 
           attributes = {
-            "group"=> group.group_name,
+            "group" => group.group_name,
             "id" => membership_name,
             "name" => membership_name,
             "users.#" => group_members_of(group).length.to_s,
           }
-          resources["aws_iam_group_membership.#{group.group_name}"] = {
+          resources["aws_iam_group_membership.#{module_name_of(group)}"] = {
             "type" => "aws_iam_group_membership",
             "primary" => {
               "id" => membership_name,
@@ -44,15 +44,19 @@ module Terraforming
       private
 
       def group_members_of(group)
-        @client.get_group(group_name: group.group_name).users.map { |user| user.user_name }
+        @client.get_group(group_name: group.group_name).map(&:users).flatten.map(&:user_name)
       end
 
       def iam_groups
-        @client.list_groups.groups
+        @client.list_groups.map(&:groups).flatten
       end
 
       def membership_name_of(group)
         "#{group.group_name}-group-membership"
+      end
+
+      def module_name_of(group)
+        normalize_module_name(group.group_name)
       end
     end
   end

@@ -24,18 +24,18 @@ module Terraforming
           attributes = {
             "association_id" => addr.association_id,
             "domain" => addr.domain,
-            "id" => addr.allocation_id,
+            "id" => vpc?(addr) ? addr.allocation_id : addr.public_ip,
             "instance" => addr.instance_id,
             "network_interface" => addr.network_interface_id,
             "private_ip" => addr.private_ip_address,
             "public_ip" => addr.public_ip,
-            "vpc" => is_vpc?(addr).to_s,
+            "vpc" => vpc?(addr).to_s,
           }
-          attributes.delete_if{|k, v| v.nil?}
-          resources["aws_eip.#{addr.allocation_id}"] = {
+          attributes.delete_if { |_k, v| v.nil? }
+          resources["aws_eip.#{module_name_of(addr)}"] = {
             "type" => "aws_eip",
             "primary" => {
-              "id" => addr.allocation_id,
+              "id" => vpc?(addr) ? addr.allocation_id : addr.public_ip,
               "attributes" => attributes
             }
           }
@@ -47,11 +47,19 @@ module Terraforming
       private
 
       def eips
-        @client.describe_addresses.addresses
+        @client.describe_addresses.map(&:addresses).flatten
       end
 
-      def is_vpc?(addr)
+      def vpc?(addr)
         addr.domain.eql?("vpc")
+      end
+
+      def module_name_of(addr)
+        if vpc?(addr)
+          normalize_module_name(addr.allocation_id)
+        else
+          normalize_module_name(addr.public_ip)
+        end
       end
     end
   end

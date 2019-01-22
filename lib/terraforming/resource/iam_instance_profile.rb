@@ -26,9 +26,10 @@ module Terraforming
             "id" => profile.instance_profile_name,
             "name" => profile.instance_profile_name,
             "path" => profile.path,
+            "role" => profile.roles[0].role_name,
             "roles.#" => profile.roles.length.to_s,
           }
-          resources["aws_iam_instance_profile.#{profile.instance_profile_name}"] = {
+          resources["aws_iam_instance_profile.#{module_name_of(profile)}"] = {
             "type" => "aws_iam_instance_profile",
             "primary" => {
               "id" => profile.instance_profile_name,
@@ -43,7 +44,11 @@ module Terraforming
       private
 
       def iam_instance_profiles
-        @client.list_instance_profiles.instance_profiles
+        @client.list_instance_profiles.map(&:instance_profiles).flatten
+      end
+
+      def module_name_of(profile)
+        normalize_module_name(profile.instance_profile_name)
       end
     end
   end

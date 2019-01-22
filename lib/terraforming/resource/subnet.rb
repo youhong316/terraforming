@@ -44,11 +44,11 @@ module Terraforming
       private
 
       def subnets
-        @client.describe_subnets.subnets
+        @client.describe_subnets.map(&:subnets).flatten
       end
 
       def module_name_of(subnet)
-        normalize_module_name(name_from_tag(subnet, subnet.subnet_id))
+        normalize_module_name("#{subnet.subnet_id}-#{name_from_tag(subnet, subnet.subnet_id)}")
       end
     end
   end

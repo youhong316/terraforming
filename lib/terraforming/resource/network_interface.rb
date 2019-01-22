@@ -49,7 +49,7 @@ module Terraforming
       end
 
       def private_ips_of(network_interface)
-        network_interface.private_ip_addresses.map{|addr| addr.private_ip_address }
+        network_interface.private_ip_addresses.map { |addr| addr.private_ip_address }
       end
 
       def security_groups_of(network_interface)
@@ -61,9 +61,8 @@ module Terraforming
       end
 
       def network_interfaces
-        @client.describe_network_interfaces.network_interfaces
+        @client.describe_network_interfaces.map(&:network_interfaces).flatten
       end
-
     end
   end
 end

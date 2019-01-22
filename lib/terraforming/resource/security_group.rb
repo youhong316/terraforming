@@ -74,24 +74,35 @@ module Terraforming
       end
 
       def module_name_of(security_group)
-        normalize_module_name("#{security_group.group_id}-#{security_group.group_name}")
+        if security_group.vpc_id.nil?
+          normalize_module_name(security_group.group_name.to_s)
+        else
+          normalize_module_name("#{security_group.vpc_id}-#{security_group.group_name}")
+        end
       end
 
       def permission_attributes_of(security_group, permission, type)
         hashcode = permission_hashcode_of(security_group, permission)
-        security_groups = security_groups_in(permission).reject { |group_id| group_id == security_group.group_id }
+        security_groups = security_groups_in(permission, security_group).reject do |identifier|
+          [security_group.group_name, security_group.group_id].include?(identifier)
+        end
 
         attributes = {
           "#{type}.#{hashcode}.from_port" => (permission.from_port || 0).to_s,
           "#{type}.#{hashcode}.to_port" => (permission.to_port || 0).to_s,
           "#{type}.#{hashcode}.protocol" => permission.ip_protocol,
           "#{type}.#{hashcode}.cidr_blocks.#" => permission.ip_ranges.length.to_s,
+          "#{type}.#{hashcode}.prefix_list_ids.#" => permission.prefix_list_ids.length.to_s,
           "#{type}.#{hashcode}.security_groups.#" => security_groups.length.to_s,
           "#{type}.#{hashcode}.self" => self_referenced_permission?(security_group, permission).to_s,
         }
 
         permission.ip_ranges.each_with_index do |range, index|
           attributes["#{type}.#{hashcode}.cidr_blocks.#{index}"] = range.cidr_ip
+        end
+
+        permission.prefix_list_ids.each_with_index do |prefix_list, index|
+          attributes["#{type}.#{hashcode}.prefix_list_ids.#{index}"] = prefix_list.prefix_list_id
         end
 
         security_groups.each do |group|
@@ -135,24 +146,35 @@ module Terraforming
           "#{permission.from_port || 0}-" <<
           "#{permission.to_port || 0}-" <<
           "#{permission.ip_protocol}-" <<
-          "#{self_referenced_permission?(security_group, permission).to_s}-"
+          "#{self_referenced_permission?(security_group, permission)}-"
 
         permission.ip_ranges.each { |range| string << "#{range.cidr_ip}-" }
-        security_groups_in(permission).each { |group| string << "#{group}-" }
+        security_groups_in(permission, security_group).each { |group| string << "#{group}-" }
 
         Zlib.crc32(string)
       end
 
       def self_referenced_permission?(security_group, permission)
-        security_groups_in(permission).include?(security_group.group_id)
+        (security_groups_in(permission, security_group) & [security_group.group_id, security_group.group_name]).any?
       end
 
       def security_groups
-        @client.describe_security_groups.security_groups
+        @client.describe_security_groups.map(&:security_groups).flatten
       end
 
-      def security_groups_in(permission)
-        permission.user_id_group_pairs.map { |range| range.group_id }
+      def security_groups_in(permission, security_group)
+        permission.user_id_group_pairs.map do |range|
+          # EC2-Classic, same account
+          if security_group.owner_id == range.user_id && !range.group_name.nil?
+            range.group_name
+          # VPC
+          elsif security_group.owner_id == range.user_id && range.group_name.nil?
+            range.group_id
+          # EC2-Classic, other account
+          else
+            "#{range.user_id}/#{range.group_name || range.group_id}"
+          end
+        end
       end
 
       def tags_attributes_of(security_group)

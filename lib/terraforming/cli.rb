@@ -1,13 +1,28 @@
 module Terraforming
   class CLI < Thor
     class_option :merge, type: :string, desc: "tfstate file to merge"
-    class_option :overwrite, type: :boolean, desc: "Overwrite existng tfstate"
+    class_option :overwrite, type: :boolean, desc: "Overwrite existing tfstate"
     class_option :tfstate, type: :boolean, desc: "Generate tfstate"
     class_option :profile, type: :string, desc: "AWS credentials profile"
+    class_option :region, type: :string, desc: "AWS region"
+    class_option :assume, type: :string, desc: "Role ARN to assume"
+    class_option :use_bundled_cert,
+                 type: :boolean,
+                 desc: "Use the bundled CA certificate from AWS SDK"
+
+    desc "alb", "ALB"
+    def alb
+      execute(Terraforming::Resource::ALB, options)
+    end
 
     desc "asg", "AutoScaling Group"
     def asg
       execute(Terraforming::Resource::AutoScalingGroup, options)
+    end
+
+    desc "cwa", "CloudWatch Alarm"
+    def cwa
+      execute(Terraforming::Resource::CloudWatchAlarm, options)
     end
 
     desc "dbpg", "Database Parameter Group"
@@ -45,6 +60,11 @@ module Terraforming
       execute(Terraforming::Resource::EIP, options)
     end
 
+    desc "efs", "EFS File System"
+    def efs
+      execute(Terraforming::Resource::EFSFileSystem, options)
+    end
+
     desc "elb", "ELB"
     def elb
       execute(Terraforming::Resource::ELB, options)
@@ -75,6 +95,11 @@ module Terraforming
       execute(Terraforming::Resource::IAMPolicy, options)
     end
 
+    desc "iampa", "IAM Policy Attachment"
+    def iampa
+      execute(Terraforming::Resource::IAMPolicyAttachment, options)
+    end
+
     desc "iamr", "IAM Role"
     def iamr
       execute(Terraforming::Resource::IAMRole, options)
@@ -95,6 +120,21 @@ module Terraforming
       execute(Terraforming::Resource::IAMUserPolicy, options)
     end
 
+    desc "kmsa", "KMS Key Alias"
+    def kmsa
+      execute(Terraforming::Resource::KMSAlias, options)
+    end
+
+    desc "kmsk", "KMS Key"
+    def kmsk
+      execute(Terraforming::Resource::KMSKey, options)
+    end
+
+    desc "lc", "Launch Configuration"
+    def lc
+      execute(Terraforming::Resource::LaunchConfiguration, options)
+    end
+
     desc "igw", "Internet Gateway"
     def igw
       execute(Terraforming::Resource::InternetGateway, options)
@@ -103,6 +143,11 @@ module Terraforming
     desc "nacl", "Network ACL"
     def nacl
       execute(Terraforming::Resource::NetworkACL, options)
+    end
+
+    desc "nat", "NAT Gateway"
+    def nat
+      execute(Terraforming::Resource::NATGateway, options)
     end
 
     desc "nif", "Network Interface"
@@ -155,15 +200,48 @@ module Terraforming
       execute(Terraforming::Resource::Subnet, options)
     end
 
+    desc "sqs", "SQS"
+    def sqs
+      execute(Terraforming::Resource::SQS, options)
+    end
+
     desc "vpc", "VPC"
     def vpc
       execute(Terraforming::Resource::VPC, options)
     end
 
+    desc "vgw", "VPN Gateway"
+    def vgw
+      execute(Terraforming::Resource::VPNGateway, options)
+    end
+
+    desc "snst", "SNS Topic"
+    def snst
+      execute(Terraforming::Resource::SNSTopic, options)
+    end
+
+    desc "snss", "SNS Subscription"
+    def snss
+      execute(Terraforming::Resource::SNSTopicSubscription, options)
+    end
+
     private
 
-    def execute(klass, options)
+    def configure_aws(options)
       Aws.config[:credentials] = Aws::SharedCredentials.new(profile_name: options[:profile]) if options[:profile]
+      Aws.config[:region] = options[:region] if options[:region]
+
+      if options[:assume]
+        args = { role_arn: options[:assume], role_session_name: "terraforming-session-#{Time.now.to_i}" }
+        args[:client] = Aws::STS::Client.new(profile: options[:profile]) if options[:profile]
+        Aws.config[:credentials] = Aws::AssumeRoleCredentials.new(args)
+      end
+
+      Aws.use_bundled_cert! if options[:use_bundled_cert]
+    end
+
+    def execute(klass, options)
+      configure_aws(options)
       result = options[:tfstate] ? tfstate(klass, options[:merge]) : tf(klass)
 
       if options[:tfstate] && options[:merge] && options[:overwrite]
@@ -181,10 +259,10 @@ module Terraforming
     end
 
     def tfstate(klass, tfstate_path)
-      tfstate = tfstate_path ? JSON.parse(open(tfstate_path).read) : tfstate_skeleton
+      tfstate = tfstate_path ? MultiJson.load(open(tfstate_path).read) : tfstate_skeleton
       tfstate["serial"] = tfstate["serial"] + 1
       tfstate["modules"][0]["resources"] = tfstate["modules"][0]["resources"].merge(klass.tfstate)
-      JSON.pretty_generate(tfstate)
+      MultiJson.encode(tfstate, pretty: true)
     end
 
     def tfstate_skeleton

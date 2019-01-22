@@ -1,9 +1,13 @@
-require "codeclimate-test-reporter"
+require "coveralls"
+require "simplecov"
 
 SimpleCov.start do
+  add_filter "lib/terraforming.rb"
+  add_filter "lib/terraforming/version.rb"
+
   formatter SimpleCov::Formatter::MultiFormatter.new([
+    Coveralls::SimpleCov::Formatter,
     SimpleCov::Formatter::HTMLFormatter,
-    CodeClimate::TestReporter::Formatter,
   ])
 end
 

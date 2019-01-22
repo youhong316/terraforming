@@ -30,7 +30,7 @@ module Terraforming
             "path" => role.path,
             "unique_id" => role.role_id,
           }
-          resources["aws_iam_role.#{role.role_name}"] = {
+          resources["aws_iam_role.#{module_name_of(role)}"] = {
             "type" => "aws_iam_role",
             "primary" => {
               "id" => role.role_name,
@@ -45,7 +45,11 @@ module Terraforming
       private
 
       def iam_roles
-        @client.list_roles.roles
+        @client.list_roles.map(&:roles).flatten
+      end
+
+      def module_name_of(role)
+        normalize_module_name(role.role_name)
       end
     end
   end

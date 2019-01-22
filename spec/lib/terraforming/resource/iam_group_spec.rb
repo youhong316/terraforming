@@ -27,7 +27,15 @@ module Terraforming
       end
 
       before do
-        client.stub_responses(:list_groups, groups: groups)
+        client.stub_responses(:list_groups, [{
+                                               groups: [groups[0]],
+                                               is_truncated: true,
+                                               marker: 'marker'
+                                             }, {
+                                               groups: [groups[1]],
+                                               is_truncated: false,
+                                               marker: nil
+                                             }])
       end
 
       describe ".tf" do
@@ -55,7 +63,7 @@ resource "aws_iam_group" "fuga" {
               "primary" => {
                 "id" => "hoge",
                 "attributes" => {
-                  "arn"=> "arn:aws:iam::123456789012:group/hoge",
+                  "arn" => "arn:aws:iam::123456789012:group/hoge",
                   "id" => "hoge",
                   "name" => "hoge",
                   "path" => "/",
@@ -68,7 +76,7 @@ resource "aws_iam_group" "fuga" {
               "primary" => {
                 "id" => "fuga",
                 "attributes" => {
-                  "arn"=> "arn:aws:iam::345678901234:group/fuga",
+                  "arn" => "arn:aws:iam::345678901234:group/fuga",
                   "id" => "fuga",
                   "name" => "fuga",
                   "path" => "/system/",

@@ -105,7 +105,7 @@ module Terraforming
             instance_type: "t2.micro",
             monitoring: { state: "enabled" },
             launch_time: Time.parse("2015-03-12 01:23:45 UTC"),
-            placement: { availability_zone: "ap-northeast-1b", group_name: "", tenancy: "default" },
+            placement: { availability_zone: "ap-northeast-1b", group_name: "pg-1", tenancy: "default" },
             subnet_id: "",
             vpc_id: "vpc-5678efgh",
             private_ip_address: "10.0.0.101",
@@ -178,7 +178,7 @@ module Terraforming
             image_id: "ami-9012ijkl",
             state: { code: 16, name: "running" },
             private_dns_name: "ip-10-0-0-102.ap-northeast-1.compute.internal",
-            public_dns_name: "ec2-54-12-0-2.ap-northeast-1.compute.amazonaws.com",
+            public_dns_name: "",
             state_transition_reason: "",
             key_name: "hoge-key",
             ami_launch_index: 0,
@@ -190,7 +190,7 @@ module Terraforming
             subnet_id: "",
             vpc_id: "vpc-9012ijkl",
             private_ip_address: "10.0.0.102",
-            public_ip_address: "54.12.0.2",
+            public_ip_address: "",
             architecture: "x86_64",
             root_device_type: "ebs",
             root_device_name: "/dev/sda1",
@@ -225,21 +225,13 @@ module Terraforming
                   attach_time: Time.parse("2015-03-12 01:23:45 UTC"),
                   delete_on_termination: true
                 },
-                association: {
-                  public_ip: "54.12.0.2",
-                  public_dns_name: "ec2-54-12-0-2.ap-northeast-1.compute.amazonaws.com",
-                  ip_owner_id: "amazon"
-                },
+                association: nil,
                 private_ip_addresses: [
                   {
                     private_ip_address: "10.0.0.102",
                     private_dns_name: "ip-10-0-6-102.ap-northeast-1.compute.internal",
                     primary: true,
-                    association: {
-                      public_ip: "54.12.0.2",
-                      public_dns_name: "ec2-54-12-0-2.ap-northeast-1.compute.amazonaws.com",
-                      ip_owner_id: "amazon"
-                    }
+                    association: nil
                   }
                 ]
               }
@@ -278,7 +270,8 @@ module Terraforming
                 delete_on_termination: true
               }
             ],
-            volume_type: "standard",
+            volume_type: "io1",
+            iops: 24,
             encrypted: false
           }
         ]
@@ -332,9 +325,10 @@ resource "aws_instance" "hoge" {
     source_dest_check           = true
 
     root_block_device {
-        volume_type           = "standard"
+        volume_type           = "io1"
         volume_size           = 8
         delete_on_termination = true
+        iops                  = 24
     }
 
     tags {
@@ -347,6 +341,7 @@ resource "aws_instance" "i-5678efgh" {
     availability_zone           = "ap-northeast-1b"
     ebs_optimized               = false
     instance_type               = "t2.micro"
+    placement_group             = "pg-1"
     monitoring                  = true
     key_name                    = "hoge-key"
     security_groups             = ["default"]
@@ -359,7 +354,6 @@ resource "aws_instance" "i-5678efgh" {
         snapshot_id           = "snap-5678efgh"
         volume_type           = "gp2"
         volume_size           = 8
-        iops                  = 24
         delete_on_termination = true
     }
 
@@ -375,7 +369,7 @@ resource "aws_instance" "i-9012ijkl" {
     monitoring                  = true
     key_name                    = "hoge-key"
     security_groups             = ["default"]
-    associate_public_ip_address = true
+    associate_public_ip_address = false
     private_ip                  = "10.0.0.102"
     source_dest_check           = true
 
@@ -434,6 +428,7 @@ resource "aws_instance" "i-9012ijkl" {
                   "id" => "i-5678efgh",
                   "instance_type" => "t2.micro",
                   "monitoring" => "true",
+                  "placement_group" => "pg-1",
                   "private_dns" => "ip-10-0-0-101.ap-northeast-1.compute.internal",
                   "private_ip" => "10.0.0.101",
                   "public_dns" => "ec2-54-12-0-1.ap-northeast-1.compute.amazonaws.com",
@@ -455,7 +450,7 @@ resource "aws_instance" "i-9012ijkl" {
                 "id" => "i-9012ijkl",
                 "attributes" => {
                   "ami" => "ami-9012ijkl",
-                  "associate_public_ip_address" => "true",
+                  "associate_public_ip_address" => "false",
                   "availability_zone" => "ap-northeast-1b",
                   "ebs_block_device.#" => "0",
                   "ebs_optimized" => "false",
@@ -465,8 +460,8 @@ resource "aws_instance" "i-9012ijkl" {
                   "monitoring" => "true",
                   "private_dns" => "ip-10-0-0-102.ap-northeast-1.compute.internal",
                   "private_ip" => "10.0.0.102",
-                  "public_dns" => "ec2-54-12-0-2.ap-northeast-1.compute.amazonaws.com",
-                  "public_ip" => "54.12.0.2",
+                  "public_dns" => "",
+                  "public_ip" => "",
                   "root_block_device.#" => "0",
                   "security_groups.#" => "1",
                   "source_dest_check" => "true",
